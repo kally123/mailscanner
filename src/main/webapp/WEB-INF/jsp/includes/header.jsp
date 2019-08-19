@@ -2,6 +2,17 @@
 <%@taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <%@ page session="false" %>
 <html>
+	
+	<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112439168-2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-112439168-2');
+</script>
+
 
 	<spring:url value="/resources/js/jquery-1.12.1.min.js"
 	var="jqueryJs" />
