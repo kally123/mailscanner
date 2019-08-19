@@ -57,6 +57,8 @@ public class MailScanner {
 	private static final String NO_NAME = "NO_NAME_";
 	private final int MESSAGE_SLICE_LIMIT = 100;
 	private static final int CUSTOMER_NAME_LIMIT = 35;
+	private static final String DEPLOYED_URL_GMAIL_APP_KEY = "swnlbbfowjcswdfh";
+	private static final String LOCALHOST_URL_GMAIL_APP_KEY = "wzievxfnxicmdqzo";
 
 	@Autowired
 	CustomerService customerService;
@@ -79,12 +81,12 @@ public class MailScanner {
 		mailSession = Session.getDefaultInstance(emailProperties, null);
 	}
 
-	private Store establishConnection() {
+	public Store establishConnectionWithKey() {
 		setMailServerProperties();
 		Store store = null;
 		try {
 			store = mailSession.getStore("imaps");
-			store.connect(emailHost, fromUser, fromUserEmailPassword);
+			store.connect(emailHost, fromUser, DEPLOYED_URL_GMAIL_APP_KEY);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -147,7 +149,7 @@ public class MailScanner {
 	}
 
 	public void scanEmailMessage() throws MessagingException, IOException {
-		Store store = establishConnection();
+		Store store = establishConnectionWithKey();
 		Folder orders = store.getFolder("ZOMATO_ORDERS");
 		orders.open(Folder.READ_ONLY);
 		System.out.println(fromUser + " GMAIL account is CONNECTED!!");
