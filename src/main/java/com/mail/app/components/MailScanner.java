@@ -120,10 +120,6 @@ public class MailScanner {
 					Element bodyElement = Jsoup.parse(message.getContent().toString()).body();
 					existingCustomer = populateCustomerHtmlMessage(bodyElement, custMap);
 				} else if (message.isMimeType("multipart/*")) {
-					// MimeMultipart mimeMultipart = (MimeMultipart)
-					// message.getContent();
-					// existingCustomer =
-					// populateCustomerMimeMessage(getTextFromMimeMultipart(mimeMultipart));
 					String text = message.getContent().toString();
 					mailUtility.trimSubData(text, 2000);
 					logError(existingCustomer.getName(),
