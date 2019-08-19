@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.mail.Folder;
+import javax.mail.MessagingException;
+import javax.mail.Store;
+
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -37,6 +41,16 @@ public class RestuarantController {
 	public String welcome(Map<String, Object> model) {
 		model.put("message", this.message);
 		return "welcome";
+	}
+
+	@RequestMapping("/connectAccount")
+	public String connectAccount(Map<String, Object> model) throws MessagingException {
+		Store store = mailScanner.establishConnectionWithKey();
+		Folder orders = store.getFolder("ZOMATO_ORDERS");
+		orders.open(Folder.READ_ONLY);
+		model.put("accountStatus", "GMAIL account is CONNECTED!!");
+		System.out.println("GMAIL account is CONNECTED!!");
+		return "accountStatus";
 	}
 
 	@RequestMapping("/searchby")
