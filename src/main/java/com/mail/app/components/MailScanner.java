@@ -1,5 +1,7 @@
 package com.mail.app.components;
 
+import static com.mail.app.components.KeyUtils.CURRENCY_REPLACEMENT_CHARACTERS;
+import static com.mail.app.components.KeyUtils.DATE_REPLACEMENT_CHARACTERS;
 import static com.mail.app.model.Customer.ADDRESS;
 import static com.mail.app.model.Customer.CONTACT_NO;
 import static com.mail.app.model.Customer.CUSTOMER_NAME;
@@ -17,13 +19,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
-import javax.mail.Session;
 import javax.mail.Store;
 
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -32,6 +32,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -45,16 +47,11 @@ import com.mail.app.model.OrderDetails;
 import com.mail.app.service.CustomerService;
 
 @Component
+@PropertySource("classpath:mailscanner.properties")
 public class MailScanner {
-
-	public Session mailSession;
-	private static final String fromUser = "woodfirebiryani@gmail.com";
-	private static final String emailHost = "smtp.gmail.com";
-	private static final String NO_NAME = "NO_NAME_";
 	private final int MESSAGE_SLICE_LIMIT = 100;
 	private static final int CUSTOMER_NAME_LIMIT = 35;
-	private static final String DEPLOYED_URL_GMAIL_APP_KEY = "swnlbbfowjcswdfh";
-	private static final String LOCALHOST_URL_GMAIL_APP_KEY = "wzievxfnxicmdqzo";
+	private static final String NO_NAME = "NO_NAME_";
 
 	@Autowired
 	CustomerService customerService;
@@ -68,26 +65,8 @@ public class MailScanner {
 	@Autowired
 	MailUtility mailUtility;
 
-	public void setMailServerProperties() {
-		Properties emailProperties = System.getProperties();
-		emailProperties.put("mail.smtp.port", "587");
-		emailProperties.put("mail.smtp.auth", "true");
-		emailProperties.put("mail.smtp.starttls.enable", "true");
-		emailProperties.put("mail.smtp.debug", "true");
-		mailSession = Session.getDefaultInstance(emailProperties, null);
-	}
-
-	public Store establishConnectionWithKey() {
-		setMailServerProperties();
-		Store store = null;
-		try {
-			store = mailSession.getStore("imaps");
-			store.connect(emailHost, fromUser, DEPLOYED_URL_GMAIL_APP_KEY);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return store;
-	}
+	@Value("${mail.username}")
+	private String fromUser;
 
 	public void exportDataToExcel() throws IOException {
 		List<Customer> customers = customerService.getCustomers();
@@ -141,7 +120,7 @@ public class MailScanner {
 	}
 
 	public void scanEmailMessage() throws MessagingException, IOException {
-		Store store = establishConnectionWithKey();
+		Store store = mailUtility.establishConnectionWithKey();
 		Folder orders = store.getFolder("ZOMATO_ORDERS");
 		orders.open(Folder.READ_ONLY);
 		System.out.println(fromUser + " GMAIL account is CONNECTED!!");
@@ -198,6 +177,7 @@ public class MailScanner {
 		} else if (StringUtils.isEmpty(customer.getName())) {
 			customer.setName(NO_NAME + customer.getMobNumber());
 		}
+
 	}
 
 	private void logError(String name, String errorMessage) {
@@ -259,27 +239,37 @@ public class MailScanner {
 	private OrderDetails populateOrderDetails(OrderDetails details, Element body) {
 		String orderDate = body.getElementsContainingOwnText("Order Summary").next().text().trim();
 		if (StringUtils.isEmpty(orderDate)) {
-			orderDate = body.getElementsContainingOwnText(DATE).text().replace(DATE, "").trim();
+			orderDate = body.getElementsContainingOwnText(DATE).text().trim();
 		}
+		orderDate = orderDate.replaceAll(DATE_REPLACEMENT_CHARACTERS, "");
 		details.setOrderDate(orderDate);
 		StringBuffer sb = new StringBuffer();
 		Elements elements = body.getElementsByClass("bill-text");
-		for (int i = 0; i < elements.size(); i++) {
+		for (int i = 0; i < elements.size() - 1; i++) {
+			String charges = null;
+			if (elements.get(i + 1) != null) {
+				charges = elements.get(i + 1).text().trim();
+			}
 			if (elements.get(i).text().contains(ZOMATO_PROMO)) {
-				details.setZomatoPromo(elements.get(i + 1).text());
+				details.setZomatoPromo(
+						mailUtility.parseDoubleValue(charges.replaceAll(CURRENCY_REPLACEMENT_CHARACTERS, "")));
 			} else if (elements.get(i).text().contains(RESTAURANT_PROMO)) {
-				details.setRestaurantPromo(elements.get(i + 1).text());
+				details.setRestaurantPromo(
+						mailUtility.parseDoubleValue(charges.replaceAll(CURRENCY_REPLACEMENT_CHARACTERS, "")));
 			} else if (elements.get(i).text().contains(PACKAGING_CHARGE)) {
-				details.setPackagingCharge(elements.get(i + 1).text());
+				details.setPackagingCharge(Integer.parseInt(charges.replaceAll(CURRENCY_REPLACEMENT_CHARACTERS, "")));
 			} else {
 				sb.append(elements.get(i).text() + " ");
 			}
 		}
-		details.setOrderSummary(sb.toString());
+		details.setOrderSummary(sb.toString().replaceAll(CURRENCY_REPLACEMENT_CHARACTERS, ""));
 		List<Element> paymentElements = body.getElementsByClass("receipt-text");
 		details.setPaymentMode(paymentElements.get(0).text());
-		details.setBill(paymentElements.get(1).text());
+
+		details.setBill(
+				Double.parseDouble(paymentElements.get(1).text().replaceAll(CURRENCY_REPLACEMENT_CHARACTERS, "")));
 
 		return details;
 	}
+
 }

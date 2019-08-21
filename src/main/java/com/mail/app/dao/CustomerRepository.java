@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import com.mail.app.model.Customer;
+import com.mail.app.model.RepeatedCustomer;
 
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
@@ -29,4 +30,9 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 	@Query(nativeQuery = true, value = "select * from customer c having c.order_details >2 order by id desc")
 	public List<Customer> findCustomersMultiOrders();
 
+	@Query(nativeQuery = true, value = "select count(*) from customer")
+	public int getCustomerCount();
+
+	@Query(nativeQuery = true, value = "select c.name, count(od.customer_id) count, sum(bill) as total from customer c, orderdetails od where c.id=od.customer_id group by c.name having count(od.customer_id) >1 order by total desc")
+	public List<RepeatedCustomer> getRepeatedCustomers();
 }

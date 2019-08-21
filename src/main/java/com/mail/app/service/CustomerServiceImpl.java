@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.mail.app.dao.CustomerRepository;
 import com.mail.app.model.Customer;
+import com.mail.app.model.RepeatedCustomer;
 
 @Service
 @Transactional
@@ -68,6 +69,16 @@ public class CustomerServiceImpl implements CustomerService {
 	@Override
 	public List<Customer> findCustomersMultiOrders() {
 		return repository.findCustomersMultiOrders();
+	}
+
+	@Override
+	public int getCustomerCount() {
+		return repository.getCustomerCount();
+	}
+
+	@Override
+	public List<RepeatedCustomer> getRepeatedCustomers() {
+		return repository.getRepeatedCustomers();
 	}
 
 }

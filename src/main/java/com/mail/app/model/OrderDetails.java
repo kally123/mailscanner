@@ -11,11 +11,11 @@ public class OrderDetails {
 	@Id
 	private String orderId;
 	private String orderDate;
-	private String bill;
+	private Double bill;
 	private String orderSummary;
-	private String restaurantPromo;
-	private String packagingCharge;
-	private String zomatoPromo;
+	private Double restaurantPromo;
+	private Integer packagingCharge;
+	private Double zomatoPromo;
 	private String paymentMode;
 
 	public OrderDetails() {
@@ -42,11 +42,11 @@ public class OrderDetails {
 		this.orderDate = orderDate;
 	}
 
-	public String getBill() {
+	public Double getBill() {
 		return bill;
 	}
 
-	public void setBill(String bill) {
+	public void setBill(Double bill) {
 		this.bill = bill;
 	}
 
@@ -58,27 +58,27 @@ public class OrderDetails {
 		this.orderSummary = orderSummary;
 	}
 
-	public String getRestaurantPromo() {
+	public Double getRestaurantPromo() {
 		return restaurantPromo;
 	}
 
-	public void setRestaurantPromo(String restaurantPromo) {
+	public void setRestaurantPromo(Double restaurantPromo) {
 		this.restaurantPromo = restaurantPromo;
 	}
 
-	public String getPackagingCharge() {
+	public Integer getPackagingCharge() {
 		return packagingCharge;
 	}
 
-	public void setPackagingCharge(String packagingCharge) {
+	public void setPackagingCharge(Integer packagingCharge) {
 		this.packagingCharge = packagingCharge;
 	}
 
-	public String getZomatoPromo() {
+	public Double getZomatoPromo() {
 		return zomatoPromo;
 	}
 
-	public void setZomatoPromo(String zomatoPromo) {
+	public void setZomatoPromo(Double zomatoPromo) {
 		this.zomatoPromo = zomatoPromo;
 	}
 

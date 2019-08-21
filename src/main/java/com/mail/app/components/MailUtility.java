@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 import javax.mail.BodyPart;
@@ -21,6 +22,7 @@ import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
+import javax.mail.Store;
 import javax.mail.Transport;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -34,13 +36,51 @@ import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
 import com.mail.app.model.Customer;
 import com.mail.app.model.OrderDetails;
 
 @Component
+@PropertySource("classpath:mailscanner.properties")
 public class MailUtility {
+
+	@Value("${deployedurl.appkey}")
+	private String DEPLOYED_URL_GMAIL_APP_KEY;
+
+	@Value("${localhosturl.appkey}")
+	private String LOCALHOST_URL_GMAIL_APP_KEY;
+
+	@Value("${mail.username}")
+	private String fromUser;
+
+	@Value("${smtp.email.type}")
+	private String emailHost;
+
+	public Session mailSession;
+
+	public void setMailServerProperties() {
+		Properties emailProperties = System.getProperties();
+		emailProperties.put("mail.smtp.port", "587");
+		emailProperties.put("mail.smtp.auth", "true");
+		emailProperties.put("mail.smtp.starttls.enable", "true");
+		emailProperties.put("mail.smtp.debug", "true");
+		mailSession = Session.getDefaultInstance(emailProperties, null);
+	}
+
+	public Store establishConnectionWithKey() {
+		setMailServerProperties();
+		Store store = null;
+		try {
+			store = mailSession.getStore("imaps");
+			store.connect(emailHost, fromUser, LOCALHOST_URL_GMAIL_APP_KEY);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return store;
+	}
 
 	public String getTextFromMimeMultipart(MimeMultipart mimeMultipart) throws MessagingException, IOException {
 		String result = "";
@@ -140,16 +180,16 @@ public class MailUtility {
 				}
 				details.setOrderSummary(orderSummary.toString());
 			} else if (message[i].contains(ZOMATO_PROMO)) {
-				details.setZomatoPromo(trimData(message[i], ZOMATO_PROMO));
+				details.setZomatoPromo(parseDoubleValue(trimData(message[i], ZOMATO_PROMO)));
 			} else if (message[i].contains(RESTAURANT_PROMO)) {
-				details.setRestaurantPromo(trimData(message[i], RESTAURANT_PROMO));
+				details.setRestaurantPromo(parseDoubleValue(trimData(message[i], RESTAURANT_PROMO)));
 			} else if (message[i].contains(PACKAGING_CHARGE)) {
-				details.setPackagingCharge(trimData(message[i], PACKAGING_CHARGE));
+				details.setPackagingCharge(Integer.parseInt(trimData(message[i], PACKAGING_CHARGE)));
 			} else if (message[i].contains(PAYMENT_MODE)) {
 				String payment = trimData(message[i], PAYMENT_MODE);
 
 				details.setPaymentMode(payment.substring(0, payment.indexOf('₹')).trim());
-				details.setBill(payment.substring(payment.indexOf('₹') + 1, payment.length()));
+				details.setBill(Double.parseDouble(payment.substring(payment.indexOf('₹') + 1, payment.length())));
 			}
 			if (customer.getOrderDetails() == null) {
 				customer.setOrderDetails(new ArrayList<OrderDetails>());
@@ -171,6 +211,17 @@ public class MailUtility {
 		}
 
 		return text;
+	}
+
+	public double parseDoubleValue(String value) {
+		double doubleValue = 0;
+		try {
+			doubleValue = Double.parseDouble(value);
+		} catch (Exception e) {
+			System.out.println("Cant parse Value : " + value);
+			e.printStackTrace();
+		}
+		return doubleValue;
 	}
 
 }

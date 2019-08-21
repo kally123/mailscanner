@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.mail.app.model.Customer;
+import com.mail.app.model.RepeatedCustomer;
 
 public interface CustomerService {
 
@@ -24,6 +25,10 @@ public interface CustomerService {
 	public void save(Customer customer);
 
 	public void saveAll(Collection<Customer> customers);
+
+	public int getCustomerCount();
+
+	public List<RepeatedCustomer> getRepeatedCustomers();
 
 	public void flush();
 }

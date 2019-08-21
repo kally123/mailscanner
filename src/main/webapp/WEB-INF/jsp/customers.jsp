@@ -1,15 +1,6 @@
-<!DOCTYPE html>
-<%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
-<%@ page session="false"%>
-<%@ page errorPage = "ShowError.jsp" %>
 <html lang="en">
 <jsp:include page="includes/header.jsp" />
 <head>
-<link rel="stylesheet" type="text/css"
-	href="webjars/bootstrap/3.3.7/css/bootstrap.min.css" />
-<c:url value="/css/main.css" var="jstlCss" />
-<link href="${jstlCss}" rel="stylesheet" />
 <script type="text/javascript">
 $(document).ready(function(){
 	var data =eval('${customers}');
@@ -66,6 +57,5 @@ $(document).ready(function(){
 		</thead>
 	</table>
 </body>
-<jsp:include page="includes/footer.jsp" />
 </html>
 
