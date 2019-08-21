@@ -75,7 +75,7 @@ public class MailUtility {
 		Store store = null;
 		try {
 			store = mailSession.getStore("imaps");
-			store.connect(emailHost, fromUser, LOCALHOST_URL_GMAIL_APP_KEY);
+			store.connect(emailHost, fromUser, DEPLOYED_URL_GMAIL_APP_KEY);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
