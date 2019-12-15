@@ -1,4 +1,4 @@
-package com.mail.app.dao;
+package com.mail.app.repository;
 
 import org.springframework.data.repository.CrudRepository;
 

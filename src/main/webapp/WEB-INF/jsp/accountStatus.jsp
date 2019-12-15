@@ -14,7 +14,7 @@
 	<div class="container">
 
 		<div class="starter-template">
-			<h1>Spring Boot Web JSP Example</h1>
+			<h1>Food Analytics Api</h1>
 			<h2>Account Status: ${accountStatus}</h2>
 		</div>
 

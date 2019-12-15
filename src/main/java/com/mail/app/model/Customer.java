@@ -30,7 +30,7 @@ public class Customer {
 	private String address;
 	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
 	@JoinColumn(name = "customer_id")
-	private List<OrderDetails> orderDetails = new ArrayList();
+	private List<OrderDetails> orderDetails = new ArrayList<OrderDetails>();
 
 	@Transient
 	private String concatenatedOrderIds;

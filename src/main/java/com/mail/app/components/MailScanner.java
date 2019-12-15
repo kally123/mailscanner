@@ -34,22 +34,23 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import com.google.common.collect.Lists;
-import com.mail.app.dao.InvalidCustomerRepository;
-import com.mail.app.dao.MessagesScannedRepository;
 import com.mail.app.model.Customer;
 import com.mail.app.model.InvalidCustomer;
 import com.mail.app.model.MessagesScanned;
 import com.mail.app.model.OrderDetails;
+import com.mail.app.repository.InvalidCustomerRepository;
+import com.mail.app.repository.MessagesScannedRepository;
 import com.mail.app.service.CustomerService;
 
 @Component
 @PropertySource("classpath:mailscanner.properties")
 public class MailScanner {
-	private final int MESSAGE_SLICE_LIMIT = 100;
+	private final int MESSAGE_SLICE_LIMIT = 10;
 	private static final int CUSTOMER_NAME_LIMIT = 35;
 	private static final String NO_NAME = "NO_NAME_";
 
@@ -65,12 +66,13 @@ public class MailScanner {
 	@Autowired
 	MailUtility mailUtility;
 
+	@Autowired
+	MailConfig mailconfig;
+
 	@Value("${mail.username}")
 	private String fromUser;
 
-	public void exportDataToExcel() throws IOException {
-		List<Customer> customers = customerService.getCustomers();
-
+	public void exportDataToExcel(List<Customer> customers) throws IOException {
 		XSSFWorkbook workbook = new XSSFWorkbook();
 		XSSFSheet spreadsheet = workbook.createSheet("Woodfire Biryani Zomato Customer List ");
 
@@ -101,26 +103,29 @@ public class MailScanner {
 				} else if (message.isMimeType("multipart/*")) {
 					String text = message.getContent().toString();
 					mailUtility.trimSubData(text, 2000);
-					logError(existingCustomer.getName(),
+					logError("INVALID MESSAGE!",
 							"INVALID MESSAGE PARSING - FWD message.. This is not a html type message. Please parse manually.."
 									+ text);
 				}
-				validateData(existingCustomer);
-				custMap.put(existingCustomer.getName(), existingCustomer);
-				System.out.print(messageNumber + "..");
+				if (existingCustomer != null) {
+					validateData(existingCustomer);
+					custMap.put(existingCustomer.getName(), existingCustomer);
+					System.out.print(messageNumber + "..");
+				}
 				messageNumber++;
 			}
 			messagesScanned.setMessagesScanned(messageNumber--);
 			saveData(custMap, messagesScanned);
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.out.println("Error occured for Messagecounter / Customer : " + messageNumber + "/"
-					+ existingCustomer.toString());
+			System.out
+					.println("Error occured for Messagecounter / Customer : " + messageNumber + "/" + existingCustomer);
 		}
 	}
 
+	@Scheduled(fixedRate = 3600000)
 	public void scanEmailMessage() throws MessagingException, IOException {
-		Store store = mailUtility.establishConnectionWithKey();
+		Store store = mailconfig.getStore();
 		Folder orders = store.getFolder("ZOMATO_ORDERS");
 		orders.open(Folder.READ_ONLY);
 		System.out.println(fromUser + " GMAIL account is CONNECTED!!");
@@ -138,7 +143,6 @@ public class MailScanner {
 			System.out.println("Proccessed Up to now : " + partitionCounter * MESSAGE_SLICE_LIMIT + " messages..");
 			partitionCounter++;
 		}
-
 	}
 
 	private void saveData(Map<String, Customer> custMap, MessagesScanned messagesScanned) {

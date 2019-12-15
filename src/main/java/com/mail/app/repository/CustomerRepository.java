@@ -1,4 +1,4 @@
-package com.mail.app.dao;
+package com.mail.app.repository;
 
 import java.util.List;
 
@@ -27,8 +27,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 	@Query(nativeQuery = true, value = "select * from customer order by id desc")
 	public List<Customer> getCustomers();
 
-	@Query(nativeQuery = true, value = "select * from customer c having c.order_details >2 order by id desc")
-	public List<Customer> findCustomersMultiOrders();
+	// @Query(value = "select c from customer c where size(c.orderDetails) > 1")
+	// public List<Customer> findCustomersMultiOrders();
 
 	@Query(nativeQuery = true, value = "select count(*) from customer")
 	public int getCustomerCount();

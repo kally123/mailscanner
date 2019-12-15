@@ -2,8 +2,8 @@ package com.mail.app.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.mail.app.dao.OrderDetailsRepository;
 import com.mail.app.model.OrderDetails;
+import com.mail.app.repository.OrderDetailsRepository;
 
 public class OrderDetailsServiceImpl implements OrderDetailsService {
 

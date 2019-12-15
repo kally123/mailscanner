@@ -25,13 +25,14 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.mail.app.components.MailConfig;
 import com.mail.app.components.MailScanner;
 import com.mail.app.components.MailUtility;
 import com.mail.app.components.SoundAnalytics;
-import com.mail.app.dao.OrderDetailsRepository;
 import com.mail.app.model.Customer;
 import com.mail.app.model.RepeatedCustomer;
 import com.mail.app.model.RepeatedCustomerClazz;
+import com.mail.app.repository.OrderDetailsRepository;
 import com.mail.app.service.CustomerService;
 
 @Controller
@@ -58,15 +59,16 @@ public class RestuarantController {
 	@Value("${mail.username}")
 	private String fromUser;
 
-	@RequestMapping("/")
-	public String welcome(Map<String, Object> model) {
-		model.put("message", this.message);
-		return "welcome";
-	}
+	@Autowired
+	MailConfig mailConfig;
+
+	List<Customer> customers = new ArrayList<Customer>();
+
+	List<Customer> repeatedCustomers = new ArrayList<Customer>();;
 
 	@RequestMapping("/connectAccount")
 	public String connectAccount(Map<String, Object> model) throws MessagingException {
-		Store store = mailUtility.establishConnectionWithKey();
+		Store store = mailConfig.getStore();
 		Folder orders = store.getFolder("ZOMATO_ORDERS");
 		orders.open(Folder.READ_ONLY);
 		model.put("accountStatus", "GMAIL account is CONNECTED!!");
@@ -95,7 +97,9 @@ public class RestuarantController {
 	@RequestMapping("/customers")
 	public String getCustomers(Map<String, Object> model)
 			throws JsonGenerationException, JsonMappingException, IOException {
-		List<Customer> customers = customerService.getCustomers();
+		if (customers.isEmpty()) {
+			customers = customerService.getCustomers();
+		}
 		String custData = new ObjectMapper().writeValueAsString(customers);
 		model.put("customers", custData);
 		model.put("totalCustomers", customers.size());
@@ -106,19 +110,34 @@ public class RestuarantController {
 	@RequestMapping("/findCustomersMultiOrders")
 	public String findCustomersMultiOrders(Map<String, Object> model)
 			throws JsonGenerationException, JsonMappingException, IOException {
-		List<Customer> customers = customerService.getCustomers().stream().filter(customer -> {
+		if (repeatedCustomers.isEmpty()) {
+			repeatedCustomers = customerService.findCustomersMultiOrders();
+		}
+		List<Customer> filteredCustomers = repeatedCustomers.stream().filter(customer -> {
 			return customer.getOrderDetails().size() > 1;
 		}).collect(Collectors.toList());
-		String custData = new ObjectMapper().writeValueAsString(customers);
+		String custData = new ObjectMapper().writeValueAsString(filteredCustomers);
 		model.put("customers", custData);
-		model.put("totalCustomers", customers.size());
+		model.put("totalCustomers", filteredCustomers.size());
 
 		return "customers";
 	}
 
 	@RequestMapping("/exportDataToExcel")
 	public String exportDataToExcel(Map<String, Object> model) throws IOException {
-		mailScanner.exportDataToExcel();
+		if (customers.isEmpty()) {
+			customers = customerService.getCustomers();
+		}
+		mailScanner.exportDataToExcel(customers);
+		return "welcome";
+	}
+
+	@RequestMapping("/exportRepeatedCustomersData")
+	public String exportRepeatedCustomersDataToExcel(Map<String, Object> model) throws IOException {
+		if (repeatedCustomers.isEmpty()) {
+			repeatedCustomers = customerService.findCustomersMultiOrders();
+		}
+		mailScanner.exportDataToExcel(repeatedCustomers);
 		return "welcome";
 	}
 
@@ -146,7 +165,7 @@ public class RestuarantController {
 		return "customer";
 	}
 
-	@RequestMapping("/dashboard")
+	@RequestMapping("/")
 	public String dashboard(Model map) throws JsonGenerationException, JsonMappingException, IOException {
 		map.addAttribute("totalcustomers", customerService.getCustomerCount());
 		map.addAttribute("totalorders", orderDetailsrepository.getOrderDetailsCount());
@@ -161,11 +180,13 @@ public class RestuarantController {
 
 		DateFormat df = new SimpleDateFormat("dd MMM yyyy");
 		df.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
-		map.addAttribute("todaysorders", orderDetailsrepository.countByOrderDate(df.format(new Date())) + "");
+		Date d1 = new Date();
+		d1.setDate(d1.getDate());
+		map.addAttribute("todaysorders", orderDetailsrepository.countByOrderDate(df.format(d1)) + "");
 
 		Date lastWeekDate = new Date();
 		lastWeekDate.setDate(lastWeekDate.getDate() - 7);
-		map.addAttribute("lastweekorders", orderDetailsrepository.countByOrderDate("14th Aug 2019") + "");
+		map.addAttribute("lastweekorders", orderDetailsrepository.countByOrderDate(df.format(lastWeekDate)) + "");
 		map.addAttribute("lastWeekDate", df.format(lastWeekDate));
 
 		return "dashboard";

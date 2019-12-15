@@ -8,9 +8,9 @@ import javax.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.mail.app.dao.CustomerRepository;
 import com.mail.app.model.Customer;
 import com.mail.app.model.RepeatedCustomer;
+import com.mail.app.repository.CustomerRepository;
 
 @Service
 @Transactional
@@ -68,7 +68,7 @@ public class CustomerServiceImpl implements CustomerService {
 
 	@Override
 	public List<Customer> findCustomersMultiOrders() {
-		return repository.findCustomersMultiOrders();
+		return repository.getCustomers();
 	}
 
 	@Override
